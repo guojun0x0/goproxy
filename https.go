@@ -79,6 +79,7 @@ func (proxy *ProxyHttpServer) dial(network, addr string) (c net.Conn, err error)
 }
 
 func (proxy *ProxyHttpServer) connectDial(ctx *ProxyCtx, network, addr string) (c net.Conn, err error) {
+	ctx.Logf("connectDial %s", network)
 	if proxy.ConnectDialWithReq == nil && proxy.ConnectDial == nil {
 		return proxy.dial(network, addr)
 	}
@@ -128,7 +129,7 @@ func (proxy *ProxyHttpServer) handleHttps(w http.ResponseWriter, r *http.Request
 		if !hasPort.MatchString(host) {
 			host += ":80"
 		}
-		targetSiteCon, err := proxy.connectDial(ctx, "tcp", host)
+		targetSiteCon, err := proxy.connectDial(ctx, proxy.Network, host)
 		if err != nil {
 			ctx.Warnf("Error dialing to %s: %s", host, err.Error())
 			httpError(proxyClient, ctx, err)
@@ -160,7 +161,7 @@ func (proxy *ProxyHttpServer) handleHttps(w http.ResponseWriter, r *http.Request
 	case ConnectHTTPMitm:
 		proxyClient.Write([]byte("HTTP/1.0 200 OK\r\n\r\n"))
 		ctx.Logf("Assuming CONNECT is plain HTTP tunneling, mitm proxying it")
-		targetSiteCon, err := proxy.connectDial(ctx, "tcp", host)
+		targetSiteCon, err := proxy.connectDial(ctx, proxy.Network, host)
 		if err != nil {
 			ctx.Warnf("Error dialing to %s: %s", host, err.Error())
 			return
